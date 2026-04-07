@@ -7,17 +7,37 @@ const App = {
 
   /* ══ إعداد المفاتيح ══════════════════════════ */
 
-  setup() {
+  async setup() {
     const ant = document.getElementById('s-ant').value.trim();
     const gh  = document.getElementById('s-gh').value.trim();
     const err = document.getElementById('setup-err');
+    const btn = document.getElementById('setup-btn');
 
-    if (!ant.startsWith('sk-') || !gh.startsWith('ghp_') && !gh.startsWith('github_pat_')) {
-      err.classList.add('show'); return;
-    }
+    // GitHub token مطلوب دائماً
+    const ghValid = gh.startsWith('ghp_') || gh.startsWith('github_pat_');
+    if (!ghValid) { err.textContent = 'يرجى إدخال GitHub Token صحيح (يبدأ بـ ghp_)'; err.classList.add('show'); return; }
+
     err.classList.remove('show');
-    localStorage.setItem(Config.keys.anthropic, ant);
+    btn.textContent = '⏳ جارٍ التحقق...'; btn.disabled = true;
     localStorage.setItem(Config.keys.github, gh);
+
+    // إذا أدخل مفتاح Anthropic — احفظه
+    if (ant.startsWith('sk-')) {
+      localStorage.setItem(Config.keys.anthropic, ant);
+    }
+
+    // ابحث عن Gist موجود وجلب البيانات (بما فيها مفتاح Anthropic المحفوظ سابقاً)
+    const found = await Storage.findAndLoadGist(gh);
+
+    // تحقق من وجود مفتاح Anthropic (محلي أو من الـ Gist)
+    if (!Storage.getAnthropic()) {
+      err.textContent = 'مفتاح Anthropic API غير موجود — أدخله في الخانة الأولى';
+      err.classList.add('show');
+      btn.textContent = '✅ ابدأ الاستخدام'; btn.disabled = false;
+      return;
+    }
+
+    btn.textContent = '✅ ابدأ الاستخدام'; btn.disabled = false;
     App.launch();
   },
 
@@ -27,6 +47,7 @@ const App = {
     if (!confirm('هل تريد تغيير مفاتيح API؟')) return;
     localStorage.removeItem(Config.keys.anthropic);
     localStorage.removeItem(Config.keys.github);
+    localStorage.removeItem(Config.keys.gistId);
     document.getElementById('setup-screen').style.display = 'flex';
     document.getElementById('app').classList.remove('show');
     document.getElementById('s-ant').value = '';
@@ -42,7 +63,7 @@ const App = {
     // جلب البيانات من GitHub Gist
     UI.setSyncStatus('syncing', '☁️ جارٍ التحميل...');
     const loaded = await Storage.loadFromGist();
-    if (!loaded) UI.setSyncStatus('ok', '☁️ جديد');
+    if (!loaded) UI.setSyncStatus('ok', '☁️ جاهز');
 
     // تهيئة الواجهة
     UI.fillPlatformSelects();
@@ -70,10 +91,24 @@ const App = {
 };
 
 /* ══ نقطة البداية ═══════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  // إذا كانت المفاتيح محفوظة، شغّل مباشرة
-  if (Storage.getAnthropic() && Storage.getGithub()) {
+document.addEventListener('DOMContentLoaded', async () => {
+  const gh  = Storage.getGithub();
+  const ant = Storage.getAnthropic();
+
+  // إذا كلا المفتاحين موجودين — شغّل مباشرة
+  if (gh && ant) {
     App.launch();
+    return;
+  }
+
+  // إذا GitHub token موجود فقط — جرّب جلب Anthropic key من الـ Gist
+  if (gh && !ant) {
+    UI.setSyncStatus('syncing', '☁️ جارٍ تحميل البيانات...');
+    const found = await Storage.findAndLoadGist(gh);
+    if (found && Storage.getAnthropic()) {
+      App.launch();
+      return;
+    }
   }
 
   // Enter في شاشة الإعداد

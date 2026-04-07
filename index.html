@@ -13,21 +13,21 @@
   <div class="setup-box">
     <div class="setup-logo">🎯</div>
     <div class="setup-brand">ملاذ للتسويق</div>
-    <div class="setup-sub">أدخل مفاتيحك مرة واحدة — كل بياناتك تُحفظ على GitHub تلقائياً</div>
+    <div class="setup-sub">أدخل GitHub Token مرة واحدة في أي جهاز — باقي البيانات تُجلب تلقائياً ☁️</div>
 
-    <!-- مفتاح Anthropic -->
-    <div class="setup-section-title">🤖 مفتاح Anthropic API</div>
-    <div class="setup-step"><div class="sn">1</div><div class="st">افتح <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ← API Keys ← Create Key</div></div>
-    <input class="setup-input" id="s-ant" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
-
-    <!-- مفتاح GitHub -->
-    <div class="setup-section-title" style="margin-top:16px">💾 مفتاح GitHub (للحفظ السحابي)</div>
-    <div class="setup-step"><div class="sn">2</div><div class="st">افتح <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank">GitHub Tokens</a> ← اختر Gist فقط ← Generate</div></div>
+    <!-- مفتاح GitHub - الأساسي -->
+    <div class="setup-section-title">💾 GitHub Token (مطلوب دائماً)</div>
+    <div class="setup-step"><div class="sn">1</div><div class="st">افتح <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank">GitHub Tokens</a> ← اختر <strong style="color:var(--green)">Gist</strong> فقط ← Generate</div></div>
     <input class="setup-input" id="s-gh" type="password" placeholder="ghp_..." autocomplete="off"/>
 
-    <div id="setup-err" class="setup-error">تأكد من إدخال كلا المفتاحين بشكل صحيح</div>
-    <button class="btn-setup" onclick="App.setup()">✅ ابدأ الاستخدام</button>
-    <div class="setup-note">🔒 المفاتيح تُحفظ في متصفحك فقط · البيانات تُحفظ في GitHub Gist الخاص بك · مجاني 100%</div>
+    <!-- مفتاح Anthropic - مرة واحدة فقط -->
+    <div class="setup-section-title" style="margin-top:14px">🤖 Anthropic API — <span style="color:var(--green);font-size:11px">مرة واحدة فقط في أول جهاز</span></div>
+    <div class="setup-step"><div class="sn">2</div><div class="st">افتح <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ← API Keys ← Create Key<br/><span style="color:var(--teal);font-size:11px">✓ في الأجهزة التالية اتركه فارغاً — سيُجلب تلقائياً من GitHub</span></div></div>
+    <input class="setup-input" id="s-ant" type="password" placeholder="sk-ant-api03-... (اتركه فارغاً في الأجهزة التالية)" autocomplete="off"/>
+
+    <div id="setup-err" class="setup-error">تأكد من إدخال GitHub Token صحيح</div>
+    <button class="btn-setup" id="setup-btn" onclick="App.setup()">✅ ابدأ الاستخدام</button>
+    <div class="setup-note">🔒 GitHub Token يُحفظ في متصفحك · مفتاح Anthropic يُحفظ في Gist ويُجلب تلقائياً · مجاني 100%</div>
   </div>
 </div>
 
