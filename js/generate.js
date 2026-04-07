@@ -82,40 +82,77 @@ const Generate = {
   /* ══ جلب بيانات الموقع (CORS Proxy) ══════════ */
 
   async fetchImages(url) {
-    // iHerb — pattern مباشر
+    const imgs = [];
+
+    // ══ iHerb ══════════════════════════════════════
     if (/iherb\.com/i.test(url)) {
-      const imgs = [];
-      const nM = url.match(/\/(\d{4,6})\/?(?:[?#]|$)/);
-      const sM = url.match(/\/pr\/([a-z0-9\-]+)/i);
-      if (nM) imgs.push('https://cloudinary.iherb.com/img/' + nM[1] + '/fd/76.jpg');
-      if (sM) {
-        imgs.push('https://images.iherb.com/pr/' + sM[1] + '/00.jpg');
-        imgs.push('https://images.iherb.com/pr/' + sM[1] + '/01.jpg');
+      // استخرج رقم المنتج من الرابط مثل: /pr/product-name/64903
+      const numM = url.match(/\/(\d{4,7})\/?(?:[?#]|$)/);
+      if (numM) {
+        const id = numM[1];
+        // روابط CDN مباشرة لـ iHerb — تعمل بدون CORS
+        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/76.jpg');
+        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/75.jpg');
+        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/74.jpg');
       }
-      if (imgs.length) return imgs.slice(0, 3);
+      // أو من اسم المنتج في الرابط
+      const slugM = url.match(/\/pr\/([a-z0-9][a-z0-9\-]+[a-z0-9])(?:\/|\?|$)/i);
+      if (slugM) {
+        imgs.push('https://images.iherb.com/l/' + slugM[1] + '-00.jpg');
+        imgs.push('https://images.iherb.com/l/' + slugM[1] + '-01.jpg');
+      }
+      return imgs.slice(0, 3);
     }
-    // CORS proxy للمواقع الأخرى
+
+    // ══ Amazon ══════════════════════════════════════
+    const asinM = url.match(/\/dp\/([A-Z0-9]{10})/i) || url.match(/([A-Z0-9]{10})(?:\/|\?|$)/);
+    if (asinM && /amazon\.|amzn\./i.test(url)) {
+      const asin = asinM[1];
+      // روابط CDN مباشرة لـ Amazon — تعمل بدون CORS
+      imgs.push('https://m.media-amazon.com/images/P/' + asin + '.01.L.jpg');
+      imgs.push('https://m.media-amazon.com/images/P/' + asin + '.02.L.jpg');
+      imgs.push('https://m.media-amazon.com/images/P/' + asin + '.03.L.jpg');
+      return imgs.slice(0, 3);
+    }
+
+    // ══ مواقع أخرى — CORS Proxy كخيار أخير ══════
     const proxies = [
-      'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-      'https://corsproxy.io/?' + encodeURIComponent(url)
+      'https://corsproxy.io/?' + encodeURIComponent(url),
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
     ];
     for (const px of proxies) {
       try {
-        const r = await Promise.race([fetch(px), new Promise((_, rj) => setTimeout(() => rj('to'), 8000))]);
-        if (typeof r === 'string' || !r.ok) continue;
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 7000);
+        const r = await fetch(px, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) continue;
         const html = await r.text();
-        const imgs = [];
-        const ogM = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-        if (ogM?.[1]) imgs.push(ogM[1]);
-        const twM = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-        if (twM?.[1] && twM[1] !== imgs[0]) imgs.push(twM[1]);
-        const jM = html.match(/"image"\s*:\s*"([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-        if (jM?.[1] && !imgs.includes(jM[1])) imgs.push(jM[1]);
-        if (imgs.length) return imgs.slice(0, 4);
+        const ogM = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']{10,})["']/i)
+                 || html.match(/<meta[^>]+content=["']([^"']{10,})["'][^>]+property=["']og:image["']/i);
+        if (ogM?.[1] && ogM[1].match(/\.(jpg|jpeg|png|webp)/i)) { imgs.push(ogM[1]); break; }
       } catch(e) { continue; }
     }
-    return [];
+    return imgs.slice(0, 3);
+  },
+
+  /* التحقق من صلاحية رابط الصورة */
+  async validateImg(url) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload  = () => res(true);
+      img.onerror = () => res(false);
+      setTimeout(() => res(false), 5000);
+      img.src = url;
+    });
+  },
+
+  /* جلب وتصفية الصور الصالحة فقط */
+  async fetchValidImages(url) {
+    const candidates = await Generate.fetchValidImages(url);
+    if (!candidates.length) return [];
+    const checks = await Promise.all(candidates.map(img => Generate.validateImg(img)));
+    return candidates.filter((_, i) => checks[i]);
   },
 
   /* ══ استدعاء AI ════════════════════════════════ */
