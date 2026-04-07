@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملاذ للتسويق</title>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- ══ شاشة الإعداد ══════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">🎯</div>
+    <div class="setup-brand">ملاذ للتسويق</div>
+    <div class="setup-sub">أدخل مفاتيحك مرة واحدة — كل بياناتك تُحفظ على GitHub تلقائياً</div>
+
+    <!-- مفتاح Anthropic -->
+    <div class="setup-section-title">🤖 مفتاح Anthropic API</div>
+    <div class="setup-step"><div class="sn">1</div><div class="st">افتح <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ← API Keys ← Create Key</div></div>
+    <input class="setup-input" id="s-ant" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
+
+    <!-- مفتاح GitHub -->
+    <div class="setup-section-title" style="margin-top:16px">💾 مفتاح GitHub (للحفظ السحابي)</div>
+    <div class="setup-step"><div class="sn">2</div><div class="st">افتح <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank">GitHub Tokens</a> ← اختر Gist فقط ← Generate</div></div>
+    <input class="setup-input" id="s-gh" type="password" placeholder="ghp_..." autocomplete="off"/>
+
+    <div id="setup-err" class="setup-error">تأكد من إدخال كلا المفتاحين بشكل صحيح</div>
+    <button class="btn-setup" onclick="App.setup()">✅ ابدأ الاستخدام</button>
+    <div class="setup-note">🔒 المفاتيح تُحفظ في متصفحك فقط · البيانات تُحفظ في GitHub Gist الخاص بك · مجاني 100%</div>
+  </div>
+</div>
+
+<!-- ══ التطبيق الرئيسي ══════════════════════════════ -->
+<div id="app">
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div class="brand-name">ملاذ للتسويق</div>
+    </div>
+    <div class="hright">
+      <div class="stat-pill">منتجات <span id="hp">0</span></div>
+      <div class="stat-pill">انتظار <span id="hd">0</span></div>
+      <div class="stat-pill">منشور <span id="hpo">0</span></div>
+      <div class="sync-badge" id="sync-badge" onclick="Storage.syncNow()" title="مزامنة مع GitHub">☁️ محفوظ</div>
+      <div class="api-btn" onclick="App.changeKey()">⚙️</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="nl">الرئيسية</div>
+    <button class="nav-btn active" onclick="UI.go('gen')" id="nav-gen">✨ توليد محتوى</button>
+    <button class="nav-btn" onclick="UI.go('prod')" id="nav-prod">📦 المنتجات <span class="badge bg" id="nb-p">0</span></button>
+    <div class="nl">النشر</div>
+    <button class="nav-btn" onclick="UI.go('queue')" id="nav-queue">📋 قائمة الانتظار <span class="badge ba" id="nb-q">0</span></button>
+    <button class="nav-btn" onclick="UI.go('posted')" id="nav-posted">✅ تم النشر <span class="badge bb" id="nb-po">0</span></button>
+    <div class="nl">الإعدادات</div>
+    <button class="nav-btn" onclick="UI.go('settings')" id="nav-settings">⚙️ الإعدادات</button>
+    <button class="nav-btn" onclick="UI.go('tips')" id="nav-tips">💡 نصائح</button>
+  </div>
+
+  <div class="main">
+
+    <!-- قسم: توليد المحتوى -->
+    <div class="section active" id="section-gen">
+      <div class="card">
+        <div class="ct">✨ توليد تغريدة جديدة</div>
+        <div class="tip"><strong>الرابط:</strong> في آخر تغريدة فقط · <strong>الصور:</strong> توزَّع على الـ Thread تلقائياً</div>
+        <div class="fg">
+          <div class="fg-g"><label>منتج محفوظ</label><select id="g-sel" onchange="Products.fillGen()"><option value="">— اختر —</option></select></div>
+          <div class="fg-g"><label>المنصة</label><select id="g-plat"></select></div>
+          <div class="fg-g full"><label>اسم المنتج *</label><input id="g-name" placeholder="مثال: كولاجين بحري من iHerb"/></div>
+          <div class="fg-g full"><label>🔗 رابط العمولة</label><input id="g-link" placeholder="https://..."/></div>
+          <div class="fg-g full"><label>ملاحظاتك (اختياري)</label><textarea id="g-notes" placeholder="تجربتك، الفوائد، السعر..."></textarea></div>
+        </div>
+        <div style="margin-top:11px">
+          <label class="sec-label">📸 صور المنتج (حتى 4)</label>
+          <div class="imgs-grid" id="gen-imgs"></div>
+        </div>
+        <div class="htag-box">
+          <div class="sec-label"># الهاشتاقات</div>
+          <div id="h-picker" class="htag-row"></div>
+          <div style="display:flex;gap:6px;margin-top:7px">
+            <input id="h-input" placeholder="#هاشتاق_إضافي" class="small-input" onkeydown="if(event.key==='Enter'){event.preventDefault();Generate.addTmpTag()}"/>
+            <button class="btn btn-s btn-sm" onclick="Generate.addTmpTag()">+ إضافة</button>
+          </div>
+          <div id="h-tmp" class="htag-row" style="margin-top:6px"></div>
+          <div class="htag-preview">سيُضاف: <span id="h-prev"></span></div>
+        </div>
+        <div style="margin-top:11px">
+          <label class="sec-label">نوع التغريدة</label>
+          <div class="chips" id="type-chips">
+            <div class="chip active" onclick="Generate.pickType(this,'مقارنة')">⚖️ مقارنة</div>
+            <div class="chip" onclick="Generate.pickType(this,'تجربة شخصية')">🧪 تجربة</div>
+            <div class="chip" onclick="Generate.pickType(this,'قائمة منتجات')">📋 قائمة</div>
+            <div class="chip" onclick="Generate.pickType(this,'تحذير ونصيحة')">⚠️ تحذير</div>
+            <div class="chip" onclick="Generate.pickType(this,'خيط Thread')">🧵 Thread</div>
+            <div class="chip" onclick="Generate.pickType(this,'توفير وعروض')">💰 توفير</div>
+          </div>
+        </div>
+        <div class="brow">
+          <button class="btn btn-p" onclick="Generate.run()">✨ توليد</button>
+          <button class="btn btn-s" onclick="Generate.run()">🔄 أعد التوليد</button>
+        </div>
+        <div class="thinking" id="thinking">
+          <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <span>الذكاء الاصطناعي يكتب...</span>
+        </div>
+      </div>
+      <div id="gen-result" style="display:none">
+        <div class="card">
+          <div class="ct" id="res-title">🐦 معاينة التغريدة</div>
+          <div id="preview"></div>
+          <div class="copy-box">
+            <div class="copy-header">
+              <span>📋 النص الجاهز للنشر</span>
+              <button class="btn btn-sm btn-p" onclick="Generate.copyFull()">📋 نسخ</button>
+            </div>
+            <textarea class="copy-ta" id="copy-ta" readonly onclick="this.select()" spellcheck="false"></textarea>
+          </div>
+          <div id="img-dl-sec" style="display:none;margin-top:10px">
+            <div class="copy-header">
+              <span>🖼️ تحميل الصور للرفع على تويتر</span>
+              <button class="btn btn-sm btn-l" onclick="Generate.dlAll()">⬇️ الكل</button>
+            </div>
+            <div class="img-dl-grid" id="img-dl"></div>
+          </div>
+          <div class="res-footer">
+            <span id="char-c">0 حرف</span>
+            <button class="btn btn-sm btn-p" onclick="Queue.save()">💾 حفظ في الانتظار</button>
+          </div>
+          <div class="alert alert-ok" id="a-copy">✅ تم نسخ النص!</div>
+          <div class="alert alert-ok" id="a-save">✅ تم الحفظ في الانتظار!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- قسم: المنتجات -->
+    <div class="section" id="section-prod">
+      <div class="card">
+        <div class="ct">➕ إضافة منتج</div>
+        <div class="fetch-box">
+          <div class="fetch-title">🤖 جلب تلقائي من الرابط</div>
+          <div class="fetch-desc">يجلب الاسم والوصف والصور من iHerb وAmazon وغيرها</div>
+          <div class="fetch-row">
+            <input id="fetch-url" placeholder="https://sa.iherb.com/... أو https://amazon.sa/..."/>
+            <button class="btn btn-p" onclick="Products.fetch()" id="fetch-btn">🔍 جلب</button>
+          </div>
+          <div class="fetch-status" id="fetch-st"></div>
+        </div>
+        <div class="divider">— أو أدخل يدوياً —</div>
+        <div class="fg">
+          <div class="fg-g full"><label>اسم المنتج *</label><input id="p-name" placeholder="يُملأ تلقائياً"/></div>
+          <div class="fg-g"><label>المنصة</label><select id="p-plat"></select></div>
+          <div class="fg-g"><label>الفئة</label><select id="p-cat" onchange="Settings.onCatChange()"></select></div>
+          <div class="fg-g full" id="custom-cat-w" style="display:none">
+            <label>اكتب الفئة الجديدة</label>
+            <div class="row-input"><input id="custom-cat" placeholder="مثال: إلكترونيات، عطور..."/><button class="btn btn-sm btn-t" onclick="Settings.saveCustCat()">💾 حفظ</button></div>
+          </div>
+          <div class="fg-g full">
+            <label>🌐 إضافة منصة جديدة</label>
+            <div class="row-input"><input id="custom-plat" placeholder="مثال: Noon, TikTok Shop..."/><button class="btn btn-sm btn-t" onclick="Settings.saveCustPlat()">💾 حفظ</button></div>
+          </div>
+          <div class="fg-g full"><label>🔗 رابط العمولة</label><input id="p-link" placeholder="يُملأ تلقائياً"/></div>
+          <div class="fg-g full"><label>📸 الصور (حتى 4)</label><div class="imgs-grid" id="p-imgs"></div></div>
+          <div class="fg-g full"><label>ملاحظاتك / وصف</label><textarea id="p-notes" placeholder="يُملأ تلقائياً..." style="min-height:58px"></textarea></div>
+        </div>
+        <div class="brow">
+          <button class="btn btn-p" onclick="Products.add()">➕ إضافة</button>
+          <button class="btn btn-s" onclick="Products.clearForm()">🔄 مسح</button>
+        </div>
+        <div class="alert alert-ok" id="a-prod">✅ تم الإضافة والحفظ!</div>
+      </div>
+      <div class="card">
+        <div class="ct">📦 منتجاتي (<span id="p-cnt">0</span>)</div>
+        <div id="p-list" class="item-list"><div class="empty"><div class="ei">📦</div><p>أضف أول منتج أعلاه</p></div></div>
+      </div>
+    </div>
+
+    <!-- قسم: قائمة الانتظار -->
+    <div class="section" id="section-queue">
+      <div class="card">
+        <div class="ct">📋 قائمة الانتظار (<span id="q-cnt">0</span>)</div>
+        <div id="q-list"><div class="empty"><div class="ei">📋</div><p>ولّد تغريدات واحفظها هنا</p></div></div>
+      </div>
+    </div>
+
+    <!-- قسم: تم النشر -->
+    <div class="section" id="section-posted">
+      <div class="card">
+        <div class="ct">✅ تم النشر (<span id="po-cnt">0</span>)</div>
+        <div class="tip"><strong>الأرشيف:</strong> التغريدات المنشورة تُحفظ هنا للرجوع إليها دون الحاجة لتوليد جديد.</div>
+        <div id="po-list"><div class="empty"><div class="ei">✅</div><p>لا توجد تغريدات منشورة بعد</p></div></div>
+      </div>
+    </div>
+
+    <!-- قسم: الإعدادات -->
+    <div class="section" id="section-settings">
+      <div class="card">
+        <div class="ct">⚙️ الإعدادات</div>
+        <!-- المنصات -->
+        <div class="settings-block">
+          <div class="sb-title">🌐 المنصات المستهدفة</div>
+          <div class="sb-desc">تظهر في كل قوائم الاختيار</div>
+          <div class="tag-list" id="s-plats"></div>
+          <div class="tag-add"><input id="s-new-plat" placeholder="أضف منصة: Noon, TikTok Shop, Sephora..."/><button class="btn btn-sm btn-p" onclick="Settings.addPlat()">+ إضافة</button></div>
+        </div>
+        <!-- الفئات -->
+        <div class="settings-block">
+          <div class="sb-title">📂 الفئات</div>
+          <div class="sb-desc">فئات المنتجات — تُحفظ وتظهر في قائمة الفئات</div>
+          <div class="tag-list" id="s-cats"></div>
+          <div class="tag-add"><input id="s-new-cat" placeholder="أضف فئة: إلكترونيات، عطور، مستلزمات..."/><button class="btn btn-sm btn-p" onclick="Settings.addCat()">+ إضافة</button></div>
+        </div>
+        <!-- الهاشتاقات -->
+        <div class="settings-block">
+          <div class="sb-title"># الهاشتاقات المحفوظة</div>
+          <div class="sb-desc">اختر منها عند التوليد — أضف وحذف حسب تخصصك</div>
+          <div class="tag-list" id="s-tags"></div>
+          <div class="tag-add"><input id="s-new-tag" placeholder="#هاشتاق_جديد" onkeydown="if(event.key==='Enter'){event.preventDefault();Settings.addTag()}"/><button class="btn btn-sm btn-p" onclick="Settings.addTag()">+ إضافة</button></div>
+        </div>
+        <!-- المزامنة -->
+        <div class="settings-block">
+          <div class="sb-title">☁️ المزامنة مع GitHub</div>
+          <div class="sb-desc">بياناتك تُزامن تلقائياً مع GitHub Gist الخاص بك</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-p" onclick="Storage.syncNow()">☁️ مزامنة الآن</button>
+            <button class="btn btn-s" onclick="Storage.exportJSON()">⬇️ تصدير JSON</button>
+            <button class="btn btn-s" onclick="Storage.importJSON()">⬆️ استيراد JSON</button>
+          </div>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="Storage.doImport(this)"/>
+          <div id="sync-info" class="sync-info"></div>
+        </div>
+        <div class="alert alert-ok" id="a-sett">✅ تم الحفظ والمزامنة!</div>
+      </div>
+    </div>
+
+    <!-- قسم: النصائح -->
+    <div class="section" id="section-tips">
+      <div class="card"><div class="ct">💡 نصائح التسويق</div><div id="tips-list"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- تحميل ملفات JavaScript بالترتيب الصحيح -->
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/generate.js"></script>
+<script src="js/products.js"></script>
+<script src="js/queue.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
