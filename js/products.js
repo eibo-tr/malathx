@@ -87,7 +87,7 @@ ${hints ? 'مساعدة: ' + hints : ''}
 
     const [aiResult, imgResult] = await Promise.allSettled([
       Generate.callAI(prompt, 350),
-      Generate.fetchImages(url)
+      Generate.fetchValidImages(url)
     ]);
 
     let ok = false;
