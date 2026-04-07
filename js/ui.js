@@ -8,8 +8,12 @@ const UI = {
   go(id) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('section-' + id).classList.add('active');
-    document.getElementById('nav-' + id).classList.add('active');
+    const desktopNav = document.getElementById('nav-' + id);
+    if (desktopNav) desktopNav.classList.add('active');
+    const mobileNav = document.getElementById('mnav-' + id);
+    if (mobileNav) mobileNav.classList.add('active');
     // استدعاء render عند التنقل
     const renders = {
       prod:     () => { Products.editingId = null; Products.render(); },
@@ -19,6 +23,9 @@ const UI = {
       tips:     () => UI.renderTips()
     };
     if (renders[id]) renders[id]();
+    // تمرير للأعلى عند التنقل في الجوال
+    const main = document.querySelector('.main');
+    if (main) main.scrollTop = 0;
   },
 
   /* ── إظهار رسالة مؤقتة ── */
@@ -37,12 +44,21 @@ const UI = {
     const pending  = queue.filter(q => q.status === 'ready');
     const posted   = queue.filter(q => q.status === 'posted');
 
-    document.getElementById('hp').textContent   = products.length;
-    document.getElementById('hd').textContent   = pending.length;
-    document.getElementById('hpo').textContent  = posted.length;
-    document.getElementById('nb-p').textContent = products.length;
-    document.getElementById('nb-q').textContent = pending.length;
-    document.getElementById('nb-po').textContent= posted.length;
+    // هيدر
+    document.getElementById('hp').textContent    = products.length;
+    document.getElementById('hd').textContent    = pending.length;
+    document.getElementById('hpo').textContent   = posted.length;
+    // شريط جانبي
+    document.getElementById('nb-p').textContent  = products.length;
+    document.getElementById('nb-q').textContent  = pending.length;
+    document.getElementById('nb-po').textContent = posted.length;
+    // شريط جوال السفلي
+    const mnbP  = document.getElementById('mnb-p');
+    const mnbQ  = document.getElementById('mnb-q');
+    const mnbPo = document.getElementById('mnb-po');
+    if (mnbP)  { mnbP.textContent  = products.length > 0 ? products.length : ''; mnbP.style.display  = products.length > 0 ? 'block' : 'none'; }
+    if (mnbQ)  { mnbQ.textContent  = pending.length > 0  ? pending.length  : ''; mnbQ.style.display  = pending.length > 0  ? 'block' : 'none'; }
+    if (mnbPo) { mnbPo.textContent = posted.length > 0   ? posted.length   : ''; mnbPo.style.display = posted.length > 0   ? 'block' : 'none'; }
   },
 
   /* ── حالة المزامنة ── */
