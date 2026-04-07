@@ -380,12 +380,149 @@ select option { background: var(--bg3); }
 .fload { background: rgba(77,158,255,.08); color: var(--blue); border: 1px solid rgba(77,158,255,.2); }
 .divider { font-size: 10px; color: var(--text3); text-align: center; margin: 9px 0; }
 
-/* ── التنقل للموبايل ── */
+/* ═══════════════════════════════════════
+   Responsive — تأقلم الشاشات
+═══════════════════════════════════════ */
+
+/* ── تابلت (600px - 1024px) ── */
+@media (max-width: 1024px) and (min-width: 601px) {
+  #app.show { grid-template-columns: 180px 1fr; }
+  .nav-btn { font-size: 11px; padding: 7px 8px; }
+  .brand-name { font-size: 13px; }
+  .hstats { gap: 5px; }
+  .stat-pill { padding: 3px 7px; font-size: 10px; }
+  .fg { grid-template-columns: 1fr 1fr; }
+  .imgs-grid { grid-template-columns: repeat(3, 1fr); }
+  .img-dl-grid { grid-template-columns: repeat(3, 1fr); }
+  .card { padding: 13px; }
+  .main { padding: 12px; }
+}
+
+/* ── جوال (max 600px) ── */
 @media (max-width: 600px) {
-  #app.show { grid-template-columns: 1fr; }
+  #app.show {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px auto 1fr;
+  }
+
+  /* إخفاء الشريط الجانبي — نستبدله بشريط سفلي */
   .sidebar { display: none; }
+
+  /* الهيدر */
+  .header { padding: 0 10px; }
+  .brand-name { font-size: 13px; }
+  .hstats { display: none; } /* إخفاء الإحصاءات في الهيدر */
+  .stat-pill { padding: 2px 6px; font-size: 10px; }
+
+  /* شريط تنقل سفلي للجوال */
+  .mobile-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    padding: 6px 0 8px;
+    justify-content: space-around;
+  }
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    color: var(--text3);
+    font-family: 'Cairo', sans-serif;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all .2s;
+    min-width: 52px;
+  }
+  .mobile-nav-btn .mnav-icon { font-size: 18px; }
+  .mobile-nav-btn.active { color: var(--green); }
+  .mobile-nav-btn .mnav-badge {
+    position: absolute;
+    top: 2px; left: 50%;
+    transform: translateX(4px);
+    background: var(--green);
+    color: #000;
+    border-radius: 8px;
+    padding: 0 4px;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 14px;
+    text-align: center;
+  }
+  .mnav-wrap { position: relative; }
+
+  /* محتوى */
+  .main {
+    padding: 10px 10px 72px; /* مساحة للشريط السفلي */
+    overflow-y: auto;
+  }
+  .card { padding: 12px; margin-bottom: 10px; }
+  .ct { font-size: 13px; margin-bottom: 10px; }
+
+  /* شبكة الحقول — عمود واحد في الجوال */
   .fg { grid-template-columns: 1fr; }
-  .imgs-grid, .img-dl-grid { grid-template-columns: repeat(2, 1fr); }
+  .fg-g.full { grid-column: 1; }
+
+  /* شبكة الصور */
+  .imgs-grid { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+  .img-dl-grid { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+
+  /* الشرائح */
+  .chips { gap: 5px; }
+  .chip { padding: 4px 10px; font-size: 11px; }
+
+  /* الهاشتاقات */
+  .htag-box { padding: 9px; }
+
+  /* المعاينة */
+  .tw-body { font-size: 12px; }
+
+  /* الأزرار */
+  .brow { gap: 6px; }
+  .btn { padding: 7px 11px; font-size: 12px; }
+  .btn-sm { padding: 5px 8px; font-size: 11px; }
+
+  /* بطاقات قائمة الانتظار */
+  .qfooter { flex-wrap: wrap; gap: 5px; }
+  .qitem { padding: 10px; }
+
+  /* بطاقات المنتجات */
+  .pcard { padding: 9px; gap: 8px; }
+  .pthumb { width: 40px; height: 40px; }
+  .pname { font-size: 12px; }
+  .pmeta { font-size: 10px; }
+
+  /* الإعدادات */
+  .settings-block { padding: 11px; }
+  .tag-add { flex-direction: column; }
+  .tag-add input { width: 100%; }
+
+  /* نسخ */
+  .copy-ta { min-height: 80px; font-size: 12px; }
+  .copy-header { flex-direction: column; gap: 6px; }
+
+  /* صور Thread */
+  .tw-imgs.two img { height: 100px; }
+  .tw-imgs.three img { height: 85px; }
+  .tw-imgs.four img { height: 85px; }
+
+  /* fetch box */
+  .fetch-row { flex-direction: column; }
+  .fetch-row input { width: 100%; }
+}
+
+/* ── شاشات كبيرة جداً (فوق 1400px) ── */
+@media (min-width: 1400px) {
+  #app.show { grid-template-columns: 240px 1fr; }
+  .main { padding: 20px 24px; }
+  .card { padding: 20px; }
 }
 
 /* مقياس التمرير */
