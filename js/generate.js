@@ -81,52 +81,103 @@ const Generate = {
 
   /* ══ جلب بيانات الموقع (CORS Proxy) ══════════ */
 
+  /* تحويل رابط صورة إلى base64 عبر proxy — يتجاوز Hotlink Protection */
+  async imgToBase64(imgUrl) {
+    const proxies = [
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl),
+      'https://corsproxy.io/?' + encodeURIComponent(imgUrl)
+    ];
+    for (const px of proxies) {
+      try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch(px, { signal: ctrl.signal });
+        if (!r.ok) continue;
+        const blob = await r.blob();
+        if (!blob.type.startsWith('image/')) continue;
+        return await new Promise(res => {
+          const reader = new FileReader();
+          reader.onload = e => res(e.target.result);
+          reader.onerror = () => res(null);
+          reader.readAsDataURL(blob);
+        });
+      } catch(e) { continue; }
+    }
+    return null;
+  },
+
   async fetchValidImages(url) {
-    const imgs = [];
+    const candidates = [];
 
     // ══ iHerb ══════════════════════════════════════
     if (/iherb\.com/i.test(url)) {
       const dec = decodeURIComponent(url);
-      // رقم المنتج في نهاية الرابط: /pr/product-name/64903
       const numM = dec.match(/\/(\d{4,7})(?:\/|\?|#|$)/);
       if (numM) {
         const id = numM[1];
-        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/76.jpg');
-        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/75.jpg');
-        imgs.push('https://cloudinary.iherb.com/img/' + id + '/fd/74.jpg');
+        candidates.push('https://cloudinary.iherb.com/img/' + id + '/fd/76.jpg');
+        candidates.push('https://cloudinary.iherb.com/img/' + id + '/fd/75.jpg');
+        candidates.push('https://cloudinary.iherb.com/img/' + id + '/fd/74.jpg');
       }
-      return imgs;
     }
 
     // ══ Amazon ══════════════════════════════════════
-    if (/amazon\.|amzn\./i.test(url)) {
+    else if (/amazon\.|amzn\./i.test(url)) {
       const dec = decodeURIComponent(url);
       const asinM = dec.match(/\/dp\/([A-Z0-9]{10})/i)
-                 || dec.match(/\/gp\/product\/([A-Z0-9]{10})/i)
-                 || dec.match(/([A-Z0-9]{10})(?:\/|\?|$)/);
+                 || dec.match(/\/gp\/product\/([A-Z0-9]{10})/i);
       if (asinM) {
         const asin = asinM[1].toUpperCase();
-        imgs.push('https://m.media-amazon.com/images/P/' + asin + '.01.L.jpg');
-        imgs.push('https://m.media-amazon.com/images/P/' + asin + '.02.L.jpg');
-        imgs.push('https://m.media-amazon.com/images/P/' + asin + '.03.L.jpg');
+        candidates.push('https://m.media-amazon.com/images/P/' + asin + '.01.L.jpg');
+        candidates.push('https://m.media-amazon.com/images/P/' + asin + '.02.L.jpg');
+        candidates.push('https://m.media-amazon.com/images/P/' + asin + '.03.L.jpg');
       }
-      return imgs;
+      // جلب رابط الصورة الحقيقي من صفحة المنتج
+      if (!candidates.length) {
+        try {
+          const px = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+          const ctrl = new AbortController();
+          setTimeout(() => ctrl.abort(), 8000);
+          const r = await fetch(px, { signal: ctrl.signal });
+          if (r.ok) {
+            const html = await r.text();
+            const ogM = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']{10,})["']/i)
+                     || html.match(/<meta[^>]+content=["']([^"']{10,})["'][^>]+property=["']og:image["']/i);
+            if (ogM?.[1]) candidates.push(ogM[1]);
+          }
+        } catch(e) {}
+      }
     }
 
-    // ══ مواقع أخرى — CORS Proxy ══════════════════
-    try {
-      const px = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-      const ctrl = new AbortController();
-      setTimeout(() => ctrl.abort(), 8000);
-      const r = await fetch(px, { signal: ctrl.signal });
-      if (r.ok) {
-        const html = await r.text();
-        const ogM = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']{10,})["']/i)
-                 || html.match(/<meta[^>]+content=["']([^"']{10,})["'][^>]+property=["']og:image["']/i);
-        if (ogM?.[1]) imgs.push(ogM[1]);
+    // ══ مواقع أخرى ══════════════════════════════
+    else {
+      try {
+        const px = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch(px, { signal: ctrl.signal });
+        if (r.ok) {
+          const html = await r.text();
+          const ogM = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']{10,})["']/i)
+                   || html.match(/<meta[^>]+content=["']([^"']{10,})["'][^>]+property=["']og:image["']/i);
+          if (ogM?.[1]) candidates.push(ogM[1]);
+        }
+      } catch(e) {}
+    }
+
+    if (!candidates.length) return [];
+
+    // تحويل الصور إلى base64 عبر proxy (يتجاوز Hotlink Protection)
+    const results = [];
+    for (const imgUrl of candidates.slice(0, 3)) {
+      const b64 = await Generate.imgToBase64(imgUrl);
+      if (b64) {
+        const compressed = await UI.compressImage(b64);
+        results.push(compressed);
       }
-    } catch(e) {}
-    return imgs;
+      if (results.length >= 2) break; // اكتفِ بصورتين لتوفير الوقت
+    }
+    return results;
   },
 
   /* ══ استدعاء AI ════════════════════════════════ */
