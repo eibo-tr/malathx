@@ -47,6 +47,43 @@
     </div>
   </div>
 
+  <!-- شريط التنقل السفلي للجوال -->
+  <nav class="mobile-nav" style="display:none">
+    <div class="mnav-wrap">
+      <button class="mobile-nav-btn active" onclick="UI.go('gen')" id="mnav-gen">
+        <span class="mnav-icon">✨</span>
+        <span>توليد</span>
+      </button>
+    </div>
+    <div class="mnav-wrap">
+      <button class="mobile-nav-btn" onclick="UI.go('prod')" id="mnav-prod">
+        <span class="mnav-icon">📦</span>
+        <span>المنتجات</span>
+        <span class="mnav-badge" id="mnb-p"></span>
+      </button>
+    </div>
+    <div class="mnav-wrap">
+      <button class="mobile-nav-btn" onclick="UI.go('queue')" id="mnav-queue">
+        <span class="mnav-icon">📋</span>
+        <span>الانتظار</span>
+        <span class="mnav-badge" id="mnb-q"></span>
+      </button>
+    </div>
+    <div class="mnav-wrap">
+      <button class="mobile-nav-btn" onclick="UI.go('posted')" id="mnav-posted">
+        <span class="mnav-icon">✅</span>
+        <span>منشور</span>
+        <span class="mnav-badge" id="mnb-po"></span>
+      </button>
+    </div>
+    <div class="mnav-wrap">
+      <button class="mobile-nav-btn" onclick="UI.go('settings')" id="mnav-settings">
+        <span class="mnav-icon">⚙️</span>
+        <span>إعدادات</span>
+      </button>
+    </div>
+  </nav>
+
   <div class="sidebar">
     <div class="nl">الرئيسية</div>
     <button class="nav-btn active" onclick="UI.go('gen')" id="nav-gen">✨ توليد محتوى</button>
