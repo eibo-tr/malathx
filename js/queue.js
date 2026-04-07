@@ -87,6 +87,30 @@ const Queue = {
     if (btn) { btn.textContent = '✅ تم'; setTimeout(() => btn.textContent = '📋 نسخ', 1500); }
   },
 
+  /* ══ فتح في تويتر ══════════════════════════════ */
+
+  openTwitter(id) {
+    const all = Queue.getAll();
+    const q   = all.find(x => x.id === id); if (!q) return;
+    // للـ Thread: افتح التغريدة الأولى فقط — الباقي تنسخ يدوياً
+    const firstTweet = q.tweets?.length > 1
+      ? q.tweets[0]
+      : q.text;
+    const twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(firstTweet);
+    // نسخ كامل النص أولاً
+    UI.copyText(q.text);
+    // فتح تويتر
+    window.open(twitterUrl, '_blank');
+  },
+
+  /* ══ تحميل صور التغريدة ════════════════════════ */
+
+  downloadImgs(id) {
+    const all = Queue.getAll();
+    const q   = all.find(x => x.id === id); if (!q || !q.imgs?.length) return;
+    q.imgs.forEach((img, i) => setTimeout(() => UI.downloadImg(img, 'tweet_img_' + (i+1) + '.jpg'), i * 400));
+  },
+
   /* ══ رسم قائمة الانتظار ════════════════════════ */
 
   render() {
