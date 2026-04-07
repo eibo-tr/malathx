@@ -199,13 +199,22 @@ const UI = {
     });
   },
 
+  /* ── فتح تويتر مع النص جاهز ── */
+  openInTwitter(text) {
+    // للـ Thread: افتح أول تغريدة فقط
+    const firstTweet = text.split('\n\n---\n\n')[0].trim();
+    const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(firstTweet);
+    window.open(url, '_blank');
+  },
+
   /* ── بطاقة تغريدة (queue/posted) ── */
   queueCard(item, isPosted) {
+    const isThread = item.tweets?.length > 1;
     return `<div class="qitem">
       <div class="qh">
         <div class="qdot" style="background:${isPosted ? 'var(--blue)' : 'var(--green)'}"></div>
         <span style="font-size:11px;font-weight:700;color:var(--text2)">${item.type}</span>
-        ${item.tweets?.length > 1 ? `<span style="font-size:10px;background:rgba(167,139,250,.12);color:var(--purple);padding:1px 5px;border-radius:6px">🧵 ${item.tweets.length}</span>` : ''}
+        ${isThread ? `<span style="font-size:10px;background:rgba(167,139,250,.12);color:var(--purple);padding:1px 5px;border-radius:6px">🧵 ${item.tweets.length}</span>` : ''}
         <span style="font-size:10px;color:var(--text3);margin-right:auto">${isPosted ? (item.postedAt || item.date) : item.date}</span>
         <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${isPosted ? 'rgba(77,158,255,.1)' : 'rgba(0,214,143,.08)'};color:${isPosted ? 'var(--blue)' : 'var(--green)'}">
           ${isPosted ? '✅ منشور' : 'جاهز'}
@@ -215,6 +224,10 @@ const UI = {
       ${item.imgs?.length ? `<div class="qimgs">${item.imgs.map(s => `<img src="${s}" onerror="this.style.display='none'" alt=""/>`).join('')}</div>` : ''}
       <div class="qfooter">
         <button class="btn btn-sm btn-s" onclick="Queue.copy(${item.id}, this)">📋 نسخ</button>
+        <button class="btn btn-sm" style="background:rgba(29,161,242,.12);color:#1da1f2;border:1px solid rgba(29,161,242,.3)" onclick="Queue.openTwitter(${item.id})">
+          🐦 افتح في تويتر
+        </button>
+        ${item.imgs?.length ? `<button class="btn btn-sm btn-l" onclick="Queue.downloadImgs(${item.id})">⬇️ الصور</button>` : ''}
         ${isPosted
           ? `<button class="btn btn-sm btn-s" onclick="Queue.moveToQueue(${item.id})">↩️ للانتظار</button>`
           : `<button class="btn btn-sm btn-t" onclick="Queue.markPosted(${item.id})">✅ نُشرت</button>`}
