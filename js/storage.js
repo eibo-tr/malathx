@@ -37,19 +37,15 @@ const Storage = {
     const products = (Storage.loadLocal(Config.keys.products) || []).map(p => ({ ...p, imgs: [] }));
     const queue    = (Storage.loadLocal(Config.keys.queue) || []).map(q => ({ ...q, imgs: [] }));
     const settings = Storage.loadLocal(Config.keys.settings) || {};
-    // نحفظ مفتاح Anthropic في الـ Gist — يُجلب تلقائياً في أي جهاز جديد
-    const anthropicKey = Storage.getAnthropic();
-    return { version: 1, updatedAt: new Date().toISOString(), products, queue, settings, anthropicKey };
+    return { version: 1, updatedAt: new Date().toISOString(), products, queue, settings };
   },
 
   /* ── استعادة البيانات ── */
   applyData(data) {
     if (!data) return;
-    if (data.products)     Storage.saveLocal(Config.keys.products, data.products);
-    if (data.queue)        Storage.saveLocal(Config.keys.queue, data.queue);
-    if (data.settings)     Storage.saveLocal(Config.keys.settings, data.settings);
-    // استعادة مفتاح Anthropic تلقائياً
-    if (data.anthropicKey) localStorage.setItem(Config.keys.anthropic, data.anthropicKey);
+    if (data.products) Storage.saveLocal(Config.keys.products, data.products);
+    if (data.queue)    Storage.saveLocal(Config.keys.queue, data.queue);
+    if (data.settings) Storage.saveLocal(Config.keys.settings, data.settings);
   },
 
   /* ══ GitHub Gist API ══════════════════════════════ */
