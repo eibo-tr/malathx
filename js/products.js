@@ -19,11 +19,14 @@ const Products = {
   },
 
   saveAll(products) {
+    // حفظ البيانات بدون صور في localStorage (للسرعة)
     const meta = products.map(p => ({ ...p, imgs: [] }));
     Storage.saveLocal(Config.keys.products, meta);
+    // حفظ الصور في sessionStorage (للجلسة الحالية)
     products.forEach(p => {
       if (p.imgs?.length) Storage.saveImages('pi-', p.id, p.imgs);
     });
+    // المزامنة مع Gist تشمل الصور عبر collectData
     Storage.schedulSync();
     UI.updateStats();
   },
