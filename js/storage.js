@@ -34,17 +34,41 @@ const Storage = {
 
   /* ── تجميع كل البيانات (بدون صور) ── */
   collectData() {
-    const products = (Storage.loadLocal(Config.keys.products) || []).map(p => ({ ...p, imgs: [] }));
-    const queue    = (Storage.loadLocal(Config.keys.queue) || []).map(q => ({ ...q, imgs: [] }));
-    const settings = Storage.loadLocal(Config.keys.settings) || {};
-    return { version: 1, updatedAt: new Date().toISOString(), products, queue, settings };
+    // نحفظ الصور داخل كل منتج وتغريدة — تتزامن مع Gist
+    const rawProducts = Storage.loadLocal(Config.keys.products) || [];
+    const rawQueue    = Storage.loadLocal(Config.keys.queue) || [];
+    const settings    = Storage.loadLocal(Config.keys.settings) || {};
+    // استعادة الصور من sessionStorage وإدراجها في البيانات
+    const products = rawProducts.map(p => ({
+      ...p,
+      imgs: Storage.loadImages('pi-', p.id)
+    }));
+    const queue = rawQueue.map(q => ({
+      ...q,
+      imgs: Storage.loadImages('qi-', q.id)
+    }));
+    return { version: 2, updatedAt: new Date().toISOString(), products, queue, settings };
   },
 
   /* ── استعادة البيانات ── */
   applyData(data) {
     if (!data) return;
-    if (data.products) Storage.saveLocal(Config.keys.products, data.products);
-    if (data.queue)    Storage.saveLocal(Config.keys.queue, data.queue);
+    if (data.products) {
+      // حفظ بيانات المنتجات (بدون صور) في localStorage
+      const meta = data.products.map(p => ({ ...p, imgs: [] }));
+      Storage.saveLocal(Config.keys.products, meta);
+      // حفظ الصور في sessionStorage لكل منتج
+      data.products.forEach(p => {
+        if (p.imgs?.length) Storage.saveImages('pi-', p.id, p.imgs);
+      });
+    }
+    if (data.queue) {
+      const meta = data.queue.map(q => ({ ...q, imgs: [] }));
+      Storage.saveLocal(Config.keys.queue, meta);
+      data.queue.forEach(q => {
+        if (q.imgs?.length) Storage.saveImages('qi-', q.id, q.imgs);
+      });
+    }
     if (data.settings) Storage.saveLocal(Config.keys.settings, data.settings);
   },
 
