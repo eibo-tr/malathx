@@ -87,20 +87,44 @@ const Queue = {
     if (btn) { btn.textContent = '✅ تم'; setTimeout(() => btn.textContent = '📋 نسخ', 1500); }
   },
 
-  /* ══ فتح في تويتر ══════════════════════════════ */
+  /* ══ فتح في تويتر (تطبيق أو متصفح) ══════════ */
 
   openTwitter(id) {
     const all = Queue.getAll();
     const q   = all.find(x => x.id === id); if (!q) return;
-    // للـ Thread: افتح التغريدة الأولى فقط — الباقي تنسخ يدوياً
-    const firstTweet = q.tweets?.length > 1
-      ? q.tweets[0]
-      : q.text;
-    const twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(firstTweet);
-    // نسخ كامل النص أولاً
+
+    const firstTweet = q.tweets?.length > 1 ? q.tweets[0] : q.text;
+    const encoded    = encodeURIComponent(firstTweet);
+
+    // نسخ النص كاملاً للحافظة
     UI.copyText(q.text);
-    // فتح تويتر
-    window.open(twitterUrl, '_blank');
+
+    const isIOS     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    if (isIOS) {
+      // iOS: جرّب فتح التطبيق أولاً، وإذا فشل افتح المتصفح
+      const appUrl     = 'twitter://post?message=' + encoded;
+      const browserUrl = 'https://twitter.com/intent/tweet?text=' + encoded;
+      const start = Date.now();
+      window.location.href = appUrl;
+      // إذا لم يُفتح التطبيق خلال 1.5 ثانية → افتح المتصفح
+      setTimeout(() => {
+        if (Date.now() - start < 2000) window.open(browserUrl, '_blank');
+      }, 1500);
+
+    } else if (isAndroid) {
+      // Android: intent لفتح التطبيق مع fallback للمتصفح
+      const intentUrl = 'intent://post?message=' + encoded +
+        '#Intent;package=com.twitter.android;scheme=twitter;' +
+        'S.browser_fallback_url=' + encodeURIComponent('https://twitter.com/intent/tweet?text=' + encoded) +
+        ';end';
+      window.location.href = intentUrl;
+
+    } else {
+      // كمبيوتر: فتح المتصفح مباشرة
+      window.open('https://twitter.com/intent/tweet?text=' + encoded, '_blank');
+    }
   },
 
   /* ══ تحميل صور التغريدة ════════════════════════ */
