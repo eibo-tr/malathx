@@ -22,23 +22,35 @@ const Storage = {
     catch(e) { return def; }
   },
 
-  /* ── حفظ الصور في sessionStorage (لا تُرسل للـ Gist) ── */
+  /* ── حفظ الصور في localStorage (تبقى دائماً) ── */
   saveImages(prefix, id, imgs) {
-    if (!imgs?.length) return;
-    try { sessionStorage.setItem(prefix + id, JSON.stringify(imgs)); } catch(e) {}
+    if (!imgs?.length) {
+      try { localStorage.removeItem(prefix + id); } catch(e) {}
+      return;
+    }
+    try { localStorage.setItem(prefix + id, JSON.stringify(imgs)); } catch(e) {
+      // لو امتلأ localStorage، احذف أقدم الصور
+      console.warn('Storage full, clearing old images');
+      Storage.clearOldImages(prefix);
+      try { localStorage.setItem(prefix + id, JSON.stringify(imgs)); } catch(e2) {}
+    }
   },
   loadImages(prefix, id) {
-    try { const v = sessionStorage.getItem(prefix + id); return v ? JSON.parse(v) : []; }
+    try { const v = localStorage.getItem(prefix + id); return v ? JSON.parse(v) : []; }
     catch(e) { return []; }
+  },
+  clearOldImages(prefix) {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+    // احذف أقدم نصف الصور
+    keys.slice(0, Math.floor(keys.length / 2)).forEach(k => localStorage.removeItem(k));
   },
 
   /* ── تجميع كل البيانات (بدون صور) ── */
   collectData() {
-    // نحفظ الصور داخل كل منتج وتغريدة — تتزامن مع Gist
     const rawProducts = Storage.loadLocal(Config.keys.products) || [];
     const rawQueue    = Storage.loadLocal(Config.keys.queue) || [];
     const settings    = Storage.loadLocal(Config.keys.settings) || {};
-    // استعادة الصور من sessionStorage وإدراجها في البيانات
+    // إدراج الصور من localStorage مع كل منتج وتغريدة
     const products = rawProducts.map(p => ({
       ...p,
       imgs: Storage.loadImages('pi-', p.id)
