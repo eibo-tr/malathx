@@ -122,8 +122,19 @@ const Queue = {
       window.location.href = intentUrl;
 
     } else {
-      // كمبيوتر: فتح المتصفح مباشرة
-      window.open('https://twitter.com/intent/tweet?text=' + encoded, '_blank');
+      // كمبيوتر: جرّب فتح تطبيق تويتر أولاً ثم المتصفح
+      const browserUrl = 'https://twitter.com/intent/tweet?text=' + encoded;
+      const appUrl     = 'twitter://post?message=' + encoded;
+      // افتح التطبيق
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = appUrl;
+      document.body.appendChild(iframe);
+      // إذا لم يُفتح خلال 1.5 ثانية → افتح المتصفح
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        if (!document.hidden) window.open(browserUrl, '_blank');
+      }, 1500);
     }
   },
 
